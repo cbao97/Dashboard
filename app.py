@@ -137,7 +137,7 @@ app.layout = html.Div(
             value='All Models'
         ),
         html.Div(id='charts-container')
-
+        
         
     ]
 )
@@ -187,10 +187,29 @@ def update_loss_graph(model):
             model_data = dfLoss3[dfLoss3['Model_name'] == model_name]
             # Tạo biểu đồ
             fig = px.line(model_data, x='epoch', y=['val_loss', 'loss'], title=model_name,
-                          labels={'value': 'loss'})
+                        labels={'value': 'loss'})
             fig.update_yaxes(range=[0.5, 1])
+            # Thêm biểu đồ vào danh sách
             charts.append(dcc.Graph(figure=fig))
-        return charts
+        
+        # Đặt kích thước của mỗi biểu đồ
+        chart_style = {'width': '30%', 'height': '300px', 'display': 'inline-block', 'padding': '10px'}
+        chart_rows = []
+        for i in range(0, len(charts)-2, 3):
+            # Tạo một hàng mới
+            row = html.Div([charts[i], charts[i+1], charts[i+2]], style={'display': 'flex'})
+            chart_rows.append(row)
+
+        # Thêm hai biểu đồ cuối cùng vào hàng cuối cùng
+        if len(charts) % 3 == 1:
+            row = html.Div([charts[-1]], style={'display': 'flex'})
+            chart_rows.append(row)
+        elif len(charts) % 3 == 2:
+            row = html.Div([charts[-2], charts[-1]], style={'display': 'flex'})
+            chart_rows.append(row)
+
+        # Đặt tất cả các hàng vào một lưới dữ liệu
+        return html.Div(chart_rows)
     else:
         # Lấy dữ liệu cho model được chọn
         model_data = dfLoss3[dfLoss3['Model_name'] == model]
