@@ -118,6 +118,8 @@ app.layout = html.Div(
             'layout': go.Layout(title='Train vs Test Pie Chart')
         }
         ),
+        html.H1("Loss and Accuracy by Model (Test dataset)"),
+        dcc.Graph(figure=fig),
         html.Label("Model Selection"),
         dcc.Dropdown(
             id='model-selection',
