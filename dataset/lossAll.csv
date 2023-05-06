@@ -1,4 +1,4 @@
-﻿Model_name,loss,val_loss,epoch
+﻿Model_name,loss,val_loss,Epoch
 RNN,0.6954,0.6954,1
 RNN,0.6918,0.643,2
 RNN,0.69,0.5984,3

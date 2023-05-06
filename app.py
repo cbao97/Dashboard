@@ -22,7 +22,6 @@ dfLoss3 = pd.read_csv("dataset/3-loss.csv")
 # Calculate the grand total
 grand_total = train_test_df['Value'].sum()
 
-
 # Lấy danh sách tên model
 model_names = dfAccuracy['Model_name'].unique()
 
@@ -40,6 +39,8 @@ traces = [
     go.Pie(labels=train_test_df['label'], values=train_test_df['Value']),
     go.Pie(labels=['Total'], values=[grand_total])
 ]
+
+available_models = dfLoss3['Model_name'].unique()
 
 
 external_stylesheets = [
@@ -74,13 +75,6 @@ app.layout = html.Div(
         ],
         className="header",
     ),
-        dcc.Graph(
-            id='pie-chart',
-            figure={
-                'data': traces,
-                'layout': go.Layout(title='Train vs Test Pie Chart')
-            }
-        ),
         html.H2("Raw data"),
         dash_table.DataTable(
             id='raw-and-clean-table',
@@ -117,6 +111,13 @@ app.layout = html.Div(
                 'width': '100%'
             }
         ),
+        dcc.Graph(
+        id='pie-chart',
+        figure={
+            'data': traces,
+            'layout': go.Layout(title='Train vs Test Pie Chart')
+        }
+        ),
         html.Label("Model Selection"),
         dcc.Dropdown(
             id='model-selection',
@@ -129,9 +130,13 @@ app.layout = html.Div(
             id='accuracy-graph',
             figure={}
         ),
-        html.H1("Loss and Accuracy by Model (Test dataset)"),
-        dcc.Graph(figure=fig)
-
+        html.H1('Loss Chart'),
+        dcc.Dropdown(
+            id='model-dropdown',
+            options=[{'label': model, 'value': model} for model in ['All Models'] + list(available_models)],
+            value='All Models'
+        ),
+        html.Div(id='charts-container')
 
         
     ]
@@ -168,7 +173,32 @@ def update_graph(model):
         fig.update_layout(height=500, showlegend=True)
     return fig
 
-
+@app.callback(
+    Output('charts-container', 'children'),
+    [Input('model-dropdown', 'value')]
+)
+def update_loss_graph(model):
+    # Nếu chọn tất cả các model
+    if model == 'All Models':
+        # Tạo danh sách các biểu đồ
+        charts = []
+        for model_name in available_models:
+            # Lấy dữ liệu cho model này
+            model_data = dfLoss3[dfLoss3['Model_name'] == model_name]
+            # Tạo biểu đồ
+            fig = px.line(model_data, x='epoch', y=['val_loss', 'loss'], title=model_name,
+                          labels={'value': 'loss'})
+            fig.update_yaxes(range=[0.5, 1])
+            charts.append(dcc.Graph(figure=fig))
+        return charts
+    else:
+        # Lấy dữ liệu cho model được chọn
+        model_data = dfLoss3[dfLoss3['Model_name'] == model]
+        # Tạo biểu đồ
+        fig = px.line(model_data, x='epoch', y=['val_loss', 'loss'], title=model,
+                      labels={'value': 'loss'})
+        fig.update_yaxes(range=[0.5, 1])
+        return dcc.Graph(figure=fig)
 
 if __name__ == "__main__":
     app.run_server(debug=True)
