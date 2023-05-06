@@ -19,6 +19,8 @@ clean_df = pd.read_csv('dataset/clean2.csv')
 dfAccuracy = pd.read_csv("dataset/AccuracyAll.csv")
 dfLossAccuracy = pd.read_csv("dataset/Loss_Accuracy.csv")
 dfLoss3 = pd.read_csv("dataset/3-loss.csv")
+df0405 = pd.read_csv('dataset/Predition0405.csv')
+df0505 = pd.read_csv('dataset/Predition0505.csv')
 # Calculate the grand total
 grand_total = train_test_df['Value'].sum()
 
@@ -52,6 +54,28 @@ external_stylesheets = [
         "rel": "stylesheet",
     },
 ]
+
+def create_pie_chart(df, model):
+    colors = ['#ff3737', '#0f0']
+    values = [sum(df['value'] < 0.5), sum(df['value'] >= 0.5)]
+    labels = ['<0.5', '>=0.5']
+    pie_chart = go.Pie(
+        labels=labels,
+        values=values,
+        marker=dict(colors=colors),
+        hoverinfo='label+percent',
+        textinfo='value',
+        textfont=dict(size=18),
+        hole=.5
+    )
+    layout = go.Layout(
+        title=model,
+        margin=dict(l=50, r=50, t=50, b=50),
+        legend=dict(orientation='h', x=0.7, y=0.2)
+    )
+    fig = go.Figure(data=[pie_chart], layout=layout)
+    return fig
+
 app = Dash(__name__, external_stylesheets=external_stylesheets)
 app.title = "VN30INDEX Prediction"
 
@@ -138,8 +162,21 @@ app.layout = html.Div(
             options=[{'label': model, 'value': model} for model in ['All Models'] + list(available_models)],
             value='All Models'
         ),
-        html.Div(id='charts-container')
-        
+        html.Div(id='charts-container'),
+        html.H1('Pie Charts'),
+        dcc.Dropdown(
+            id='date-dropdown',
+            options=[
+                {'label': '04/05', 'value': '0405'},
+                {'label': '05/05', 'value': '0505'}
+            ],
+        value='0405'
+    ),
+    dcc.Graph(id='pie-chart-1'),
+    dcc.Graph(id='pie-chart-2'),
+    dcc.Graph(id='pie-chart-3'),
+    dcc.Graph(id='pie-chart-4'),
+    dcc.Graph(id='pie-chart-5')
         
     ]
 )
@@ -220,6 +257,27 @@ def update_loss_graph(model):
                       labels={'value': 'loss'})
         fig.update_yaxes(range=[0.5, 1])
         return dcc.Graph(figure=fig)
+
+@app.callback(
+    Output('pie-chart-1', 'figure'),
+    Output('pie-chart-2', 'figure'),
+    Output('pie-chart-3', 'figure'),
+    Output('pie-chart-4', 'figure'),
+    Output('pie-chart-5', 'figure'),
+    Input('date-dropdown', 'value')
+)
+def update_pie_charts(date):
+    if date == '0405':
+        df = df0405
+    else:
+        df = df0505
+    pie_chart_1 = create_pie_chart(df[df['Model_name'] == 'RNN'], 'RNN')
+    pie_chart_2 = create_pie_chart(df[df['Model_name'] == 'GRU'], 'GRU')
+    pie_chart_3 = create_pie_chart(df[df['Model_name'] == 'LSTM'], 'LSTM')
+    pie_chart_4 = create_pie_chart(df[df['Model_name'] == 'BGRU'], 'BGRU')
+    pie_chart_5 = create_pie_chart(df[df['Model_name'] == 'BiLSTM'], 'BiLSTM')
+    return pie_chart_1, pie_chart_2, pie_chart_3, pie_chart_4, pie_chart_5
+
 
 if __name__ == "__main__":
     app.run_server(debug=True)
