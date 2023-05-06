@@ -17,6 +17,8 @@ train_test_df = df[df['label'].isin(['Train', 'Test'])]
 raw_df = pd.read_csv('dataset/fullnews2.csv')
 clean_df = pd.read_csv('dataset/clean2.csv')
 dfAccuracy = pd.read_csv("dataset/AccuracyAll.csv")
+dfLossAccuracy = pd.read_csv("dataset/Loss_Accuracy.csv")
+dfLoss3 = pd.read_csv("dataset/3-loss.csv")
 # Calculate the grand total
 grand_total = train_test_df['Value'].sum()
 
@@ -29,13 +31,16 @@ model_names = np.append(model_names, "All Models")
 
 # Tạo dropdown options cho model selection
 dropdown_options = [{'label': name, 'value': name} for name in model_names]
-
+# Create figure
+fig = px.bar(dfLossAccuracy, x="Model_name", y=["Loss", "Accuracy"],
+             barmode="group", title="Loss and Accuracy by Model (Test dataset)")
 
 # Define the pie chart traces
 traces = [
     go.Pie(labels=train_test_df['label'], values=train_test_df['Value']),
     go.Pie(labels=['Total'], values=[grand_total])
 ]
+
 
 external_stylesheets = [
     {
@@ -123,7 +128,9 @@ app.layout = html.Div(
         dcc.Graph(
             id='accuracy-graph',
             figure={}
-        )
+        ),
+        html.H1("Loss and Accuracy by Model (Test dataset)"),
+        dcc.Graph(figure=fig)
 
 
         
@@ -138,17 +145,13 @@ app.layout = html.Div(
 )
 def update_graph(model):
     if model == "All Models":
-        fig = make_subplots(rows=5, cols=1, shared_xaxes=True,
-                            subplot_titles=model_names[:5])
+        fig = make_subplots(rows=5, cols=1, shared_xaxes=True, subplot_titles=model_names[:5])
         for i, name in enumerate(model_names[:5]):
             df = dfAccuracy[dfAccuracy['Model_name'] == name]
-            fig.add_trace(go.Scatter(x=df['Epoch_No'], y=df['accuracy'],
-                                     mode='lines', name='accuracy'), row=i+1, col=1)
-            fig.add_trace(go.Scatter(x=df['Epoch_No'], y=df['val_accuracy'],
-                                     mode='lines', name='val_accuracy'), row=i+1, col=1)
-            fig.add_trace(go.Scatter(x=df['Epoch_No'], y=df['test_accuracy'],
-                                     mode='lines', name='test_accuracy'), row=i+1, col=1)
+            fig.add_trace(go.Scatter(x=df['Epoch_No'], y=df['accuracy'], mode='lines', name='accuracy'), row=i+1, col=1)
         fig.update_layout(height=1200, showlegend=False)
+
+        fig.update_yaxes(range=[0, 1])
     else:
         # Hiển thị biểu đồ cho mô hình được lựa chọn
         df = dfAccuracy[dfAccuracy['Model_name'] == model]
